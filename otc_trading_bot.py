@@ -85,37 +85,84 @@ def initialize_api():
 api = initialize_api()
 
 
-def get_otc_stocks() -> List[Dict]:
+def get_all_us_stocks() -> List[Dict]:
     """
-    Get list of OTC stocks from Alpaca.
-    Filters by allowed exchanges: OTCQX, OTCQB, Pink Current (OTC/OTCMKTS)
+    Get list of all US stocks from all exchanges (NYSE, NASDAQ, OTC, etc.).
+    Returns stocks grouped by exchange.
     """
     try:
-        # Get all assets (stocks)
+        # Get all assets (stocks) from all US exchanges
         assets = api.list_assets(status='active', asset_class='us_equity')
         
-        # Filter OTC stocks by allowed exchanges
-        otc_stocks = []
+        # Group stocks by exchange
+        all_stocks = []
+        exchange_counts = {}
         
         for asset in assets:
-            # Filter by allowed OTC exchanges (removed tradable requirement - just for screening)
             if hasattr(asset, 'exchange'):
-                # Check if exchange matches allowed OTC exchanges
-                exchange = asset.exchange if hasattr(asset, 'exchange') else None
-                if exchange in ALLOWED_OTC_EXCHANGES:
-                    otc_stocks.append({
-                        'symbol': asset.symbol,
-                        'name': asset.name,
-                        'exchange': exchange,
-                        'tradable': asset.tradable if hasattr(asset, 'tradable') else False
-                    })
+                exchange = asset.exchange if hasattr(asset, 'exchange') else 'UNKNOWN'
+                
+                # Normalize exchange names for grouping
+                exchange_normalized = normalize_exchange_name(exchange)
+                
+                stock_info = {
+                    'symbol': asset.symbol,
+                    'name': asset.name,
+                    'exchange': exchange,  # Original exchange name
+                    'exchange_normalized': exchange_normalized,  # Normalized for grouping
+                    'tradable': asset.tradable if hasattr(asset, 'tradable') else False
+                }
+                
+                all_stocks.append(stock_info)
+                
+                # Count by normalized exchange
+                exchange_counts[exchange_normalized] = exchange_counts.get(exchange_normalized, 0) + 1
         
-        logger.info(f"Found {len(otc_stocks)} OTC stocks (OTCQX/OTCQB/Pink Current)")
-        return otc_stocks
+        # Log summary by exchange
+        logger.info(f"Found {len(all_stocks)} US stocks across all exchanges:")
+        for exch, count in sorted(exchange_counts.items()):
+            logger.info(f"  {exch}: {count} stocks")
+        
+        return all_stocks
     except Exception as e:
         # Suppress error messages during screening
         pass
         return []
+
+
+def normalize_exchange_name(exchange: str) -> str:
+    """
+    Normalize exchange names for grouping.
+    Maps various exchange identifiers to standard names.
+    """
+    exchange_upper = exchange.upper() if exchange else ''
+    
+    # NYSE
+    if 'NYSE' in exchange_upper or exchange_upper == 'N' or 'NEW YORK' in exchange_upper:
+        return 'NYSE'
+    
+    # NASDAQ
+    if 'NASDAQ' in exchange_upper or exchange_upper in ['Q', 'QNX', 'BX', 'PHLX']:
+        return 'NASDAQ'
+    
+    # OTC Markets
+    if any(otc in exchange_upper for otc in ['OTC', 'OTCQX', 'OTCQB', 'PINK', 'OTCMKTS']):
+        return 'OTC'
+    
+    # AMEX
+    if 'AMEX' in exchange_upper or exchange_upper == 'A':
+        return 'AMEX'
+    
+    # Other regional exchanges
+    if 'BATS' in exchange_upper:
+        return 'BATS'
+    if 'CHX' in exchange_upper or 'CHICAGO' in exchange_upper:
+        return 'CHX'
+    if 'ARCA' in exchange_upper:
+        return 'ARCA'
+    
+    # Unknown or other
+    return exchange if exchange else 'UNKNOWN'
 
 
 def check_volume_increase(symbol: str) -> bool:
@@ -285,10 +332,14 @@ def get_stock_price(symbol: str, verbose_errors: bool = True, use_fallback: bool
     return None
 
 
-def screen_stocks(symbols: List[str]) -> List[Dict]:
+def screen_stocks(symbols: List[str], stocks_info: List[Dict] = None) -> List[Dict]:
     """
     Screen stocks based on price range and volume activity.
-    Returns list of qualified stocks with their metrics.
+    Returns list of qualified stocks with their metrics, including exchange information.
+    
+    Args:
+        symbols: List of stock symbols to screen
+        stocks_info: Optional list of stock info dicts with exchange info (from get_all_us_stocks)
     """
     qualified_stocks = []
     total_stocks = len(symbols)
@@ -298,7 +349,7 @@ def screen_stocks(symbols: List[str]) -> List[Dict]:
     no_volume_increase_count = 0
     no_price_symbols = []  # Track symbols without prices for manual review
     
-    logger.info(f"\nScreening {total_stocks} OTC stocks...")
+    logger.info(f"\nScreening {total_stocks} US stocks...")
     
     # Progress indicators
     progress_interval = max(1, total_stocks // 50)  # Update progress every ~2%
@@ -354,11 +405,25 @@ def screen_stocks(symbols: List[str]) -> List[Dict]:
             
             # Check if tradable (for info only - still qualify if not tradable)
             is_tradable = False
+            exchange = 'UNKNOWN'
+            exchange_normalized = 'UNKNOWN'
+            stock_name = symbol
             try:
                 asset = api.get_asset(symbol)
                 is_tradable = asset.tradable if hasattr(asset, 'tradable') else False
+                if hasattr(asset, 'exchange'):
+                    exchange = asset.exchange
+                    exchange_normalized = normalize_exchange_name(exchange)
             except Exception:
                 pass
+            
+            # Use stock info from lookup if available
+            if symbol in stocks_info_dict:
+                stock_info = stocks_info_dict[symbol]
+                exchange = stock_info.get('exchange', exchange)
+                exchange_normalized = stock_info.get('exchange_normalized', exchange_normalized)
+                stock_name = stock_info.get('name', stock_name)
+                is_tradable = stock_info.get('tradable', is_tradable)
             
             # Add peak detection analysis if available
             peak_score = 0
@@ -375,13 +440,16 @@ def screen_stocks(symbols: List[str]) -> List[Dict]:
             
             qualified_stocks.append({
                 'symbol': symbol,
+                'name': stock_name,
+                'exchange': exchange,
+                'exchange_normalized': exchange_normalized,
                 'price': price,
                 'performance_pct': performance_pct,
                 'avg_volume': avg_volume,
                 'recent_volume': recent_volume,
                 'volume_ratio': recent_volume / avg_volume if avg_volume > 0 else 0,
                 'tradable': is_tradable,
-                'peak_score': peak_score,  # AI peak detection confidence
+                'peak_score': peak_score,  # AI peak detection confidence (for ranking)
                 'entry_signal': entry_signal  # BUY/WATCH/WAIT
             })
             
@@ -669,12 +737,12 @@ def process_daily_buys():
             logger.info(f"✓ Completed 5-day buy schedule for {symbol}")
 
 
-def daily_screen_and_trade(otc_symbols: List[str] = None):
+def daily_screen_and_trade(symbols: List[str] = None):
     """
-    Main function to screen stocks and execute trades.
+    Main function to screen stocks from all US markets and execute trades.
     """
     logger.info("\n" + "="*60)
-    logger.info(f"Daily OTC Stock Screening - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info(f"Daily US Market Stock Screening - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     logger.info("="*60)
     
     # Step 1: Check existing positions for profit targets
@@ -688,12 +756,16 @@ def daily_screen_and_trade(otc_symbols: List[str] = None):
     # Step 3: Screen for new stock candidates
     logger.info("\n[Step 3] Screening for new stock candidates...")
     
-    # Get OTC symbols if not provided
-    if otc_symbols is None:
-        otc_stocks = get_otc_stocks()
-        otc_symbols = [stock['symbol'] for stock in otc_stocks]
+    # Get all US stocks if not provided
+    all_stocks = None
+    if symbols is None:
+        all_stocks = get_all_us_stocks()
+        symbols = [stock['symbol'] for stock in all_stocks]
+    else:
+        # If symbols provided, try to get exchange info for them
+        all_stocks = get_all_us_stocks()
     
-    if not otc_symbols:
+    if not symbols:
         # Suppress warning - no symbols available
         pass
         return
@@ -705,8 +777,8 @@ def daily_screen_and_trade(otc_symbols: List[str] = None):
         logger.info(f"Already have {active_symbols_count} active stocks in buy schedule. Skipping new screening.")
         return
     
-    # Screen stocks
-    qualified_stocks = screen_stocks(otc_symbols)
+    # Screen stocks (pass stock info for exchange information)
+    qualified_stocks = screen_stocks(symbols, stocks_info=all_stocks)
     
     if not qualified_stocks:
         logger.info("\n❌ No qualified stocks found today. No new trades.")
@@ -765,14 +837,40 @@ def daily_screen_and_trade(otc_symbols: List[str] = None):
     else:
         logger.info("\nNo current positions.")
     
-    # Show qualified stocks summary (including non-tradable ones)
+    # Show qualified stocks summary grouped by exchange, ranked by confidence
     if qualified_stocks:
-        logger.info(f"\n📊 Qualified Stocks Summary ({len(qualified_stocks)} stocks):")
-        for stock in qualified_stocks[:MAX_STOCKS_PER_DAY]:
-            tradable_status = "✓ Tradable" if stock.get('tradable', False) else "⚠️ Not tradable"
-            peak_info = f", Peak: {stock.get('peak_score', 0):.0%}" if stock.get('peak_score', 0) > 0 else ""
-            entry_sig = stock.get('entry_signal', 'N/A')
-            logger.info(f"  • {stock['symbol']}: ${stock['price']:.2f}, Perf: {stock['performance_pct']:.2f}%, Vol: {stock['volume_ratio']:.2f}×, Signal: {entry_sig}{peak_info} - {tradable_status}")
+        logger.info(f"\n📊 Qualified Stocks Summary ({len(qualified_stocks)} stocks) - Grouped by Exchange:")
+        logger.info("="*60)
+        
+        # Group stocks by exchange
+        stocks_by_exchange = {}
+        for stock in qualified_stocks:
+            exch = stock.get('exchange_normalized', 'UNKNOWN')
+            if exch not in stocks_by_exchange:
+                stocks_by_exchange[exch] = []
+            stocks_by_exchange[exch].append(stock)
+        
+        # Sort exchanges (preferred order: NYSE, NASDAQ, OTC, others)
+        exchange_order = ['NYSE', 'NASDAQ', 'AMEX', 'OTC', 'BATS', 'ARCA', 'CHX']
+        sorted_exchanges = sorted(
+            stocks_by_exchange.keys(),
+            key=lambda x: (exchange_order.index(x) if x in exchange_order else 999, x)
+        )
+        
+        # Print stocks grouped by exchange, ranked by confidence (peak_score)
+        for exchange in sorted_exchanges:
+            stocks = stocks_by_exchange[exchange]
+            # Sort by confidence (peak_score) descending
+            stocks.sort(key=lambda x: x.get('peak_score', 0), reverse=True)
+            
+            logger.info(f"\n🏛️  {exchange} ({len(stocks)} stocks):")
+            for stock in stocks[:MAX_STOCKS_PER_DAY]:  # Limit per exchange for display
+                confidence = stock.get('peak_score', 0) * 100  # Convert to percentage
+                tradable_status = "✓ Tradable" if stock.get('tradable', False) else "⚠️ Not tradable"
+                peak_info = f", Confidence: {confidence:.0f}%" if confidence > 0 else ""
+                entry_sig = stock.get('entry_signal', 'N/A')
+                logger.info(f"  • {stock['symbol']} @ ${stock['price']:.2f} | {stock.get('name', 'N/A')[:40]}")
+                logger.info(f"    Perf: {stock['performance_pct']:.1f}%, Vol: {stock['volume_ratio']:.2f}×, Signal: {entry_sig}{peak_info} - {tradable_status}")
     
     if buy_schedules:
         logger.info(f"\nActive Buy Schedules ({len(buy_schedules)}):")
