@@ -220,3 +220,4 @@ response = td_client.place_order(account_id='YOUR_ACCOUNT', order=order)
 - Many platforms have OTC access but vary in API quality
 - Consider costs: Some platforms charge per trade, others have monthly fees
 
+

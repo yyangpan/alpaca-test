@@ -1,0 +1,406 @@
+#!/usr/bin/env python3
+"""
+OTC Peak Detection Algorithm
+Based on historical OTC market patterns:
+1. Volume increase (pump phase)
+2. Price momentum building
+3. Peak formation with volume divergence
+4. Price decline (dump phase)
+
+This module detects peaks and provides entry/exit signals for OTC stocks.
+"""
+
+import yfinance as yf
+import pandas as pd
+import numpy as np
+from scipy.signal import find_peaks
+from datetime import datetime, timedelta
+from typing import Dict, Optional, Tuple, List
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class OTCPeakDetector:
+    """
+    Detects peaks in OTC stocks using pattern recognition:
+    - Volume spike patterns
+    - Price momentum indicators
+    - Volume-price divergence (peak signal)
+    - Reversal signals
+    """
+    
+    def __init__(self, 
+                 volume_threshold_multiplier: float = 2.0,
+                 price_momentum_days: int = 3,
+                 peak_detection_window: int = 10,
+                 min_peak_prominence: float = 0.05):
+        """
+        Initialize peak detector with parameters.
+        
+        Args:
+            volume_threshold_multiplier: Volume must be N× average for signal
+            price_momentum_days: Days to measure price momentum
+            peak_detection_window: Window size for peak detection
+            min_peak_prominence: Minimum peak prominence (5% of price range)
+        """
+        self.volume_threshold = volume_threshold_multiplier
+        self.momentum_days = price_momentum_days
+        self.peak_window = peak_detection_window
+        self.min_prominence = min_peak_prominence
+    
+    def get_historical_data(self, symbol: str, period: str = "6mo") -> Optional[pd.DataFrame]:
+        """
+        Get historical data for analysis.
+        """
+        try:
+            ticker = yf.Ticker(symbol)
+            hist = ticker.history(period=period)
+            
+            if hist is None or len(hist) < 10:
+                return None
+            
+            return hist
+        except Exception:
+            return None
+    
+    def detect_volume_spike(self, hist: pd.DataFrame) -> Dict:
+        """
+        Detect volume spike patterns indicating pump phase.
+        
+        Returns dict with:
+        - has_spike: bool
+        - volume_ratio: float
+        - spike_intensity: float
+        - days_since_spike: int
+        """
+        if hist is None or len(hist) < 30:
+            return {'has_spike': False, 'volume_ratio': 0, 'spike_intensity': 0, 'days_since_spike': 999}
+        
+        volume_col = 'Volume' if 'Volume' in hist.columns else 'volume'
+        
+        # Calculate 30-day average volume
+        avg_volume = hist[volume_col].tail(30).mean()
+        
+        # Get recent volumes (last 5 days)
+        recent_volumes = hist[volume_col].tail(5)
+        max_recent_volume = recent_volumes.max()
+        recent_avg_volume = recent_volumes.mean()
+        
+        # Volume spike criteria
+        volume_ratio = recent_avg_volume / avg_volume if avg_volume > 0 else 0
+        has_spike = volume_ratio >= self.volume_threshold
+        
+        # Find when spike occurred
+        days_since_spike = 999
+        spike_intensity = 0
+        
+        if has_spike:
+            # Find the day with maximum volume spike
+            volume_ratios = hist[volume_col].tail(10) / avg_volume if avg_volume > 0 else pd.Series([0])
+            max_idx = volume_ratios.idxmax() if len(volume_ratios) > 0 else None
+            
+            if max_idx:
+                spike_date_idx = hist.index.get_loc(max_idx)
+                days_since_spike = len(hist) - spike_date_idx - 1
+                spike_intensity = volume_ratios.max()
+        
+        return {
+            'has_spike': has_spike,
+            'volume_ratio': volume_ratio,
+            'spike_intensity': spike_intensity,
+            'days_since_spike': max(0, days_since_spike)
+        }
+    
+    def detect_price_momentum(self, hist: pd.DataFrame) -> Dict:
+        """
+        Detect price momentum and trend direction.
+        
+        Returns dict with:
+        - momentum: float (positive = up, negative = down)
+        - trend: str ('up', 'down', 'neutral')
+        - momentum_strength: float (0-1)
+        """
+        if hist is None or len(hist) < self.momentum_days + 5:
+            return {'momentum': 0, 'trend': 'neutral', 'momentum_strength': 0}
+        
+        price_col = 'Close' if 'Close' in hist.columns else 'close'
+        prices = hist[price_col].tail(self.momentum_days + 5)
+        
+        # Calculate momentum (rate of change)
+        start_price = prices.iloc[0]
+        end_price = prices.iloc[-1]
+        momentum_pct = ((end_price - start_price) / start_price) * 100 if start_price > 0 else 0
+        
+        # Calculate momentum strength (how consistent is the trend)
+        price_changes = prices.pct_change().dropna()
+        positive_days = (price_changes > 0).sum()
+        momentum_strength = positive_days / len(price_changes) if len(price_changes) > 0 else 0
+        
+        # Determine trend
+        if momentum_pct > 5 and momentum_strength > 0.6:
+            trend = 'up'
+        elif momentum_pct < -5 and momentum_strength < 0.4:
+            trend = 'down'
+        else:
+            trend = 'neutral'
+        
+        return {
+            'momentum': momentum_pct,
+            'trend': trend,
+            'momentum_strength': momentum_strength
+        }
+    
+    def detect_peak_signals(self, hist: pd.DataFrame) -> Dict:
+        """
+        Detect peak formation signals:
+        - Volume divergence (price up but volume decreasing)
+        - Price peak with RSI overbought
+        - Volume spike followed by price decline
+        
+        Returns dict with peak signals.
+        """
+        if hist is None or len(hist) < 15:
+            return {'is_at_peak': False, 'peak_confidence': 0, 'reversal_risk': 0}
+        
+        price_col = 'Close' if 'Close' in hist.columns else 'close'
+        volume_col = 'Volume' if 'Volume' in hist.columns else 'volume'
+        
+        # Get recent data
+        recent = hist.tail(10)
+        prices = recent[price_col]
+        volumes = recent[volume_col]
+        
+        # Signal 1: Volume divergence (price up, volume down = peak signal)
+        price_trend = (prices.iloc[-1] - prices.iloc[-5]) / prices.iloc[-5] if prices.iloc[-5] > 0 else 0
+        volume_trend = (volumes.iloc[-5:].mean() - volumes.iloc[-10:-5].mean()) / volumes.iloc[-10:-5].mean() if volumes.iloc[-10:-5].mean() > 0 else 0
+        
+        volume_divergence = price_trend > 0.1 and volume_trend < -0.2  # Price up 10%, volume down 20%
+        
+        # Signal 2: Recent peak detection using scipy
+        try:
+            price_values = prices.values
+            price_range = price_values.max() - price_values.min()
+            prominence = max(self.min_prominence * price_range, 0.01)
+            
+            peaks, properties = find_peaks(price_values, 
+                                         prominence=prominence,
+                                         distance=3)
+            
+            # Check if most recent day is near a peak
+            is_near_peak = len(peaks) > 0 and peaks[-1] >= len(price_values) - 2
+        except Exception:
+            is_near_peak = False
+        
+        # Signal 3: Volume spike followed by decline (dump starting)
+        avg_volume = volumes.iloc[-15:-5].mean() if len(volumes) >= 15 else volumes.mean()
+        recent_volume = volumes.iloc[-3:].mean()
+        price_change_last_3 = (prices.iloc[-1] - prices.iloc[-3]) / prices.iloc[-3] if prices.iloc[-3] > 0 else 0
+        
+        volume_decline = recent_volume < avg_volume * 0.7  # Volume dropped 30%
+        price_dropping = price_change_last_3 < -0.05  # Price down 5% in last 3 days
+        
+        dump_signal = volume_decline and price_dropping
+        
+        # Calculate peak confidence (0-1)
+        peak_signals = sum([volume_divergence, is_near_peak, dump_signal])
+        peak_confidence = peak_signals / 3.0
+        
+        # Calculate reversal risk (higher when multiple signals align)
+        reversal_risk = peak_confidence
+        
+        is_at_peak = peak_confidence >= 0.5  # 50% confidence threshold
+        
+        return {
+            'is_at_peak': is_at_peak,
+            'peak_confidence': peak_confidence,
+            'reversal_risk': reversal_risk,
+            'volume_divergence': volume_divergence,
+            'near_peak': is_near_peak,
+            'dump_signal': dump_signal
+        }
+    
+    def get_entry_signal(self, symbol: str) -> Dict:
+        """
+        Determine if this is a good entry point.
+        Entry signals:
+        - Volume spike just starting
+        - Price momentum building
+        - Not yet at peak
+        
+        Returns:
+            Dict with entry recommendation and confidence
+        """
+        hist = self.get_historical_data(symbol)
+        
+        if hist is None:
+            return {'signal': 'NO_DATA', 'confidence': 0, 'reason': 'Insufficient data'}
+        
+        # Check volume spike
+        volume_analysis = self.detect_volume_spike(hist)
+        
+        # Check momentum
+        momentum_analysis = self.detect_price_momentum(hist)
+        
+        # Check if already at peak
+        peak_analysis = self.detect_peak_signals(hist)
+        
+        # Entry criteria
+        has_volume_spike = volume_analysis['has_spike']
+        days_since_spike = volume_analysis['days_since_spike']
+        positive_momentum = momentum_analysis['momentum'] > 5
+        not_at_peak = not peak_analysis['is_at_peak']
+        
+        # Entry signal logic
+        if has_volume_spike and days_since_spike <= 3 and positive_momentum and not_at_peak:
+            confidence = min(0.9, 
+                           volume_analysis['volume_ratio'] / 5.0 +  # Higher volume = higher confidence
+                           momentum_analysis['momentum'] / 50.0)    # Higher momentum = higher confidence
+            signal = 'BUY'
+            reason = f"Volume spike ({volume_analysis['volume_ratio']:.1f}× avg), momentum {momentum_analysis['momentum']:.1f}%, not at peak"
+        elif has_volume_spike and days_since_spike <= 5 and positive_momentum:
+            confidence = 0.6
+            signal = 'WATCH'
+            reason = f"Volume spike detected but may be late entry. Momentum {momentum_analysis['momentum']:.1f}%"
+        else:
+            signal = 'WAIT'
+            confidence = 0.3
+            reason = "Waiting for volume spike and momentum alignment"
+        
+        return {
+            'signal': signal,
+            'confidence': confidence,
+            'reason': reason,
+            'volume_analysis': volume_analysis,
+            'momentum_analysis': momentum_analysis,
+            'peak_analysis': peak_analysis
+        }
+    
+    def get_exit_signal(self, symbol: str, entry_price: Optional[float] = None) -> Dict:
+        """
+        Determine if this is a good exit point.
+        Exit signals:
+        - Peak detected (high confidence)
+        - Price declining after peak
+        - Volume divergence
+        - Profit target reached (if entry_price provided)
+        
+        Returns:
+            Dict with exit recommendation and confidence
+        """
+        hist = self.get_historical_data(symbol)
+        
+        if hist is None:
+            return {'signal': 'HOLD', 'confidence': 0, 'reason': 'Insufficient data'}
+        
+        price_col = 'Close' if 'Close' in hist.columns else 'close'
+        current_price = hist[price_col].iloc[-1]
+        
+        # Check peak signals
+        peak_analysis = self.detect_peak_signals(hist)
+        
+        # Check momentum (if declining, may be time to exit)
+        momentum_analysis = self.detect_price_momentum(hist)
+        
+        # Check profit if entry price provided
+        profit_pct = 0
+        profit_target_reached = False
+        if entry_price and entry_price > 0:
+            profit_pct = ((current_price - entry_price) / entry_price) * 100
+            profit_target_reached = profit_pct >= 50  # 50% profit target
+        
+        # Exit signal logic
+        if peak_analysis['is_at_peak'] and peak_analysis['peak_confidence'] >= 0.7:
+            confidence = peak_analysis['peak_confidence']
+            signal = 'SELL'
+            reason = f"Peak detected (confidence: {confidence:.0%}). Volume divergence or reversal signals active."
+        elif peak_analysis['reversal_risk'] >= 0.6 and momentum_analysis['trend'] == 'down':
+            confidence = peak_analysis['reversal_risk']
+            signal = 'SELL'
+            reason = f"Reversal risk high ({confidence:.0%}). Price declining after peak."
+        elif profit_target_reached:
+            confidence = 0.9
+            signal = 'SELL'
+            reason = f"Profit target reached: {profit_pct:.1f}% gain"
+        elif peak_analysis['reversal_risk'] >= 0.5:
+            confidence = peak_analysis['reversal_risk']
+            signal = 'CAUTION'
+            reason = f"Reversal risk moderate ({confidence:.0%}). Consider taking profits."
+        else:
+            signal = 'HOLD'
+            confidence = 0.3
+            reason = f"No exit signals. Momentum: {momentum_analysis['trend']}, Peak risk: {peak_analysis['reversal_risk']:.0%}"
+        
+        return {
+            'signal': signal,
+            'confidence': confidence,
+            'reason': reason,
+            'current_price': current_price,
+            'profit_pct': profit_pct,
+            'peak_analysis': peak_analysis,
+            'momentum_analysis': momentum_analysis
+        }
+    
+    def analyze_symbol(self, symbol: str, entry_price: Optional[float] = None) -> Dict:
+        """
+        Complete analysis of a symbol with entry/exit signals.
+        """
+        entry = self.get_entry_signal(symbol)
+        exit_sig = self.get_exit_signal(symbol, entry_price)
+        
+        hist = self.get_historical_data(symbol, period="3mo")
+        
+        current_price = None
+        if hist is not None and len(hist) > 0:
+            price_col = 'Close' if 'Close' in hist.columns else 'close'
+            current_price = hist[price_col].iloc[-1]
+        
+        return {
+            'symbol': symbol,
+            'current_price': current_price,
+            'entry_signal': entry,
+            'exit_signal': exit_sig,
+            'recommendation': self._get_overall_recommendation(entry, exit_sig)
+        }
+    
+    def _get_overall_recommendation(self, entry: Dict, exit_sig: Dict) -> str:
+        """Get overall recommendation based on entry and exit signals."""
+        if exit_sig['signal'] == 'SELL':
+            return 'SELL'
+        elif entry['signal'] == 'BUY':
+            return 'BUY'
+        elif entry['signal'] == 'WATCH':
+            return 'WATCH'
+        else:
+            return 'HOLD'
+
+
+def analyze_otc_peak(symbol: str, entry_price: Optional[float] = None) -> Dict:
+    """
+    Convenience function to analyze a single OTC symbol for peak signals.
+    """
+    detector = OTCPeakDetector()
+    return detector.analyze_symbol(symbol, entry_price)
+
+
+if __name__ == '__main__':
+    # Test the peak detector
+    import sys
+    
+    symbol = sys.argv[1] if len(sys.argv) > 1 else 'VXRT'
+    
+    print(f"\nAnalyzing {symbol} for peak signals...")
+    print("="*60)
+    
+    detector = OTCPeakDetector()
+    analysis = detector.analyze_symbol(symbol)
+    
+    print(f"\nSymbol: {analysis['symbol']}")
+    print(f"Current Price: ${analysis['current_price']:.2f}" if analysis['current_price'] else "Price: N/A")
+    print(f"\nEntry Signal: {analysis['entry_signal']['signal']} (confidence: {analysis['entry_signal']['confidence']:.0%})")
+    print(f"  Reason: {analysis['entry_signal']['reason']}")
+    print(f"\nExit Signal: {analysis['exit_signal']['signal']} (confidence: {analysis['exit_signal']['confidence']:.0%})")
+    print(f"  Reason: {analysis['exit_signal']['reason']}")
+    print(f"\nOverall Recommendation: {analysis['recommendation']}")
+    print("="*60)
+

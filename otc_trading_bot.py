@@ -25,6 +25,13 @@ try:
 except ImportError:
     YFINANCE_AVAILABLE = False
 
+# Try to import peak detector
+try:
+    from otc_peak_detector import OTCPeakDetector, analyze_otc_peak
+    PEAK_DETECTOR_AVAILABLE = True
+except ImportError:
+    PEAK_DETECTOR_AVAILABLE = False
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -106,8 +113,8 @@ def get_otc_stocks() -> List[Dict]:
         logger.info(f"Found {len(otc_stocks)} OTC stocks (OTCQX/OTCQB/Pink Current)")
         return otc_stocks
     except Exception as e:
-        logger.error(f"Error fetching OTC stocks: {e}")
-        logger.info("Note: Please provide a list of OTC symbols if Alpaca doesn't return any.")
+        # Suppress error messages during screening
+        pass
         return []
 
 
@@ -357,6 +364,19 @@ def screen_stocks(symbols: List[str]) -> List[Dict]:
             except Exception:
                 pass
             
+            # Add peak detection analysis if available
+            peak_score = 0
+            entry_signal = 'N/A'
+            if PEAK_DETECTOR_AVAILABLE:
+                try:
+                    from otc_peak_detector import OTCPeakDetector
+                    detector = OTCPeakDetector()
+                    entry_analysis = detector.get_entry_signal(symbol)
+                    peak_score = entry_analysis['confidence']
+                    entry_signal = entry_analysis['signal']
+                except Exception:
+                    pass
+            
             qualified_stocks.append({
                 'symbol': symbol,
                 'price': price,
@@ -364,7 +384,9 @@ def screen_stocks(symbols: List[str]) -> List[Dict]:
                 'avg_volume': avg_volume,
                 'recent_volume': recent_volume,
                 'volume_ratio': recent_volume / avg_volume if avg_volume > 0 else 0,
-                'tradable': is_tradable
+                'tradable': is_tradable,
+                'peak_score': peak_score,  # AI peak detection confidence
+                'entry_signal': entry_signal  # BUY/WATCH/WAIT
             })
             
             screened_count += 1
@@ -389,8 +411,9 @@ def screen_stocks(symbols: List[str]) -> List[Dict]:
     
     # Skip showing list of symbols without prices (reduce verbose output)
     
-    # Sort by volume ratio (most active first), then by performance
-    qualified_stocks.sort(key=lambda x: (x['volume_ratio'], x['performance_pct']), reverse=True)
+    # Sort by peak score (AI entry signal confidence) first - catches pump phase early
+    # Then by volume ratio, then by performance
+    qualified_stocks.sort(key=lambda x: (x.get('peak_score', 0), x['volume_ratio'], x['performance_pct']), reverse=True)
     
     return qualified_stocks[:MAX_STOCKS_PER_DAY]
 
@@ -415,8 +438,8 @@ def get_positions() -> Dict[str, Dict]:
             }
         
         return positions_dict
-    except Exception as e:
-        logger.error(f"Error getting positions: {e}")
+    except Exception:
+        # Suppress error messages
         return {}
 
 
@@ -433,7 +456,8 @@ def load_buy_schedules() -> Dict:
                 return data
         return {}
     except Exception as e:
-        logger.error(f"Error loading buy schedules: {e}")
+        # Suppress error messages
+        pass
         return {}
 
 
@@ -449,7 +473,8 @@ def save_buy_schedules():
             json.dump(data, f, indent=2)
         logger.debug(f"Buy schedules saved to {SCHEDULES_FILE}")
     except Exception as e:
-        logger.error(f"Error saving buy schedules: {e}")
+        # Suppress error messages
+        pass
 
 
 def execute_buy(symbol: str) -> bool:
@@ -462,22 +487,22 @@ def execute_buy(symbol: str) -> bool:
         try:
             asset = api.get_asset(symbol)
             if not asset.tradable:
-                logger.warning(f"⚠️  {symbol} is NOT tradable on Alpaca - cannot place buy order (screening only)")
+                # Suppress warning - stock not tradable
                 return False
         except Exception:
-            logger.warning(f"⚠️  Cannot verify tradability for {symbol} - skipping buy")
+            # Suppress warning
             return False
         
         current_price = get_stock_price(symbol)
         if current_price is None:
-            logger.warning(f"Cannot get price for {symbol}, skipping buy")
+            # Suppress warning
             return False
         
         # Calculate number of shares to buy (round down to whole shares)
         shares_to_buy = int(DAILY_PURCHASE_AMOUNT / current_price)
         
         if shares_to_buy < 1:
-            logger.warning(f"Not enough funds to buy at least 1 share of {symbol} at ${current_price}")
+            # Suppress warning
             return False
         
         # Place market order
@@ -513,8 +538,8 @@ def execute_buy(symbol: str) -> bool:
         
         return True
         
-    except Exception as e:
-        logger.error(f"Error executing buy for {symbol}: {e}")
+    except Exception:
+        # Suppress error messages
         return False
 
 
@@ -526,14 +551,14 @@ def execute_sell(symbol: str, reason: str = "Profit target reached") -> bool:
         positions = get_positions()
         
         if symbol not in positions:
-            logger.warning(f"No position found for {symbol}")
+            # Suppress warning
             return False
         
         qty = positions[symbol]['qty']
         current_price = positions[symbol]['current_price']
         
         if qty <= 0:
-            logger.warning(f"Invalid quantity for {symbol}: {qty}")
+            # Suppress warning
             return False
         
         # Place market sell order
@@ -554,16 +579,31 @@ def execute_sell(symbol: str, reason: str = "Profit target reached") -> bool:
         
         return True
         
-    except Exception as e:
-        logger.error(f"Error executing sell for {symbol}: {e}")
+    except Exception:
+        # Suppress error messages
         return False
 
 
 def check_profit_targets():
     """
-    Check all positions and sell if they reach profit target (50% above average cost).
+    Check all positions and sell if:
+    1. Peak detected (using AI algorithm) - catches dump phase early
+    2. Profit target reached (50% above average cost)
+    3. Reversal signals detected
     """
     positions = get_positions()
+    
+    if not positions:
+        return
+    
+    # Initialize peak detector if available
+    peak_detector = None
+    if PEAK_DETECTOR_AVAILABLE:
+        try:
+            from otc_peak_detector import OTCPeakDetector
+            peak_detector = OTCPeakDetector()
+        except Exception:
+            pass
     
     for symbol, pos_info in positions.items():
         try:
@@ -571,13 +611,37 @@ def check_profit_targets():
             current_price = pos_info['current_price']
             profit_pct = pos_info['unrealized_plpc']
             
-            # Check if profit target reached (50% above average cost)
-            if profit_pct >= PROFIT_TARGET_PCT:
-                logger.info(f"\n🎯 Profit target reached for {symbol}!")
+            sell_reason = None
+            
+            # Method 1: Use AI peak detection if available (catches peaks before dump)
+            if peak_detector:
+                try:
+                    exit_analysis = peak_detector.get_exit_signal(symbol, entry_price=avg_entry)
+                    
+                    if exit_analysis['signal'] == 'SELL' and exit_analysis['confidence'] >= 0.7:
+                        sell_reason = f"Peak detected: {exit_analysis['reason']} (confidence: {exit_analysis['confidence']:.0%})"
+                    elif exit_analysis['signal'] == 'SELL' and profit_pct >= 30:  # Lower threshold if peak detected
+                        sell_reason = f"Peak detected with {profit_pct:.1f}% profit: {exit_analysis['reason']}"
+                    elif exit_analysis['signal'] == 'CAUTION' and profit_pct >= PROFIT_TARGET_PCT:
+                        sell_reason = f"Reversal risk detected with {profit_pct:.1f}% profit: {exit_analysis['reason']}"
+                except Exception:
+                    # Fall back to simple profit target if peak detection fails
+                    pass
+            
+            # Method 2: Fallback to simple profit target if no peak detection
+            if not sell_reason and profit_pct >= PROFIT_TARGET_PCT:
+                sell_reason = f"Profit target reached ({profit_pct:.2f}%)"
+            
+            # Execute sell if reason found
+            if sell_reason:
+                logger.info(f"\n🎯 {symbol} - SELL SIGNAL!")
                 logger.info(f"   Avg Entry: ${avg_entry:.2f}, Current: ${current_price:.2f}, Profit: {profit_pct:.2f}%")
-                execute_sell(symbol, f"Profit target reached ({profit_pct:.2f}%)")
-        except Exception as e:
-            logger.error(f"Error checking profit for {symbol}: {e}")
+                logger.info(f"   Reason: {sell_reason}")
+                execute_sell(symbol, sell_reason)
+                
+        except Exception:
+            # Suppress error messages
+            pass
 
 
 def process_daily_buys():
@@ -635,7 +699,8 @@ def daily_screen_and_trade(otc_symbols: List[str] = None):
         otc_symbols = [stock['symbol'] for stock in otc_stocks]
     
     if not otc_symbols:
-        logger.warning("No OTC symbols available. Please provide a list of OTC symbols.")
+        # Suppress warning - no symbols available
+        pass
         return
     
     # If we already have MAX_STOCKS_PER_DAY in buy schedule, skip screening
@@ -710,7 +775,9 @@ def daily_screen_and_trade(otc_symbols: List[str] = None):
         logger.info(f"\n📊 Qualified Stocks Summary ({len(qualified_stocks)} stocks):")
         for stock in qualified_stocks[:MAX_STOCKS_PER_DAY]:
             tradable_status = "✓ Tradable" if stock.get('tradable', False) else "⚠️ Not tradable"
-            logger.info(f"  • {stock['symbol']}: Price ${stock['price']:.2f}, Performance {stock['performance_pct']:.2f}%, Volume {stock['volume_ratio']:.2f}× - {tradable_status}")
+            peak_info = f", Peak: {stock.get('peak_score', 0):.0%}" if stock.get('peak_score', 0) > 0 else ""
+            entry_sig = stock.get('entry_signal', 'N/A')
+            logger.info(f"  • {stock['symbol']}: ${stock['price']:.2f}, Perf: {stock['performance_pct']:.2f}%, Vol: {stock['volume_ratio']:.2f}×, Signal: {entry_sig}{peak_info} - {tradable_status}")
     
     if buy_schedules:
         logger.info(f"\nActive Buy Schedules ({len(buy_schedules)}):")
@@ -732,7 +799,8 @@ def view_account():
         logger.info(f"Portfolio Value: ${float(account.portfolio_value):,.2f}")
         logger.info(f"Equity: ${float(account.equity):,.2f}")
     except Exception as e:
-        logger.error(f"Error getting account info: {e}")
+        # Suppress error messages
+        pass
 
 
 def view_positions():
@@ -792,7 +860,8 @@ def main():
                 otc_symbols = [line.strip() for line in f if line.strip()]
             logger.info(f"Loaded {len(otc_symbols)} symbols from {args.symbols_file}")
         except Exception as e:
-            logger.error(f"Error reading symbols file: {e}")
+            # Suppress error messages
+            pass
             sys.exit(1)
     
     # Run main trading function

@@ -2724,3 +2724,188 @@ No current positions.
 2026-01-16 21:32:53,387 - INFO -   • ADXS: Price $0.40, Performance 90.48%, Volume 6.98× - ⚠️ Not tradable
 2026-01-16 21:32:53,387 - INFO - 
 ============================================================
+2026-01-16 21:58:04,012 - INFO - Alpaca API initialized successfully! Account Status: ACTIVE
+2026-01-16 21:58:04,015 - INFO - 
+============================================================
+2026-01-16 21:58:04,015 - INFO - Daily OTC Stock Screening - 2026-01-16 21:58:04
+2026-01-16 21:58:04,015 - INFO - ============================================================
+2026-01-16 21:58:04,015 - INFO - 
+[Step 1] Checking existing positions for profit targets...
+2026-01-16 21:58:04,038 - INFO - 
+[Step 2] Processing daily buy orders...
+2026-01-16 21:58:04,039 - INFO - 
+[Step 3] Screening for new stock candidates...
+2026-01-16 21:58:04,571 - INFO - Found 1010 OTC stocks (OTCQX/OTCQB/Pink Current)
+2026-01-16 21:58:04,581 - INFO - 
+Screening 1010 OTC stocks...
+2026-01-16 21:58:05,805 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: NHIQ"}}}
+2026-01-16 21:58:06,211 - ERROR - $NHIQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:06,776 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: RMGUF"}}}
+2026-01-16 21:58:07,394 - ERROR - $RMGUF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:08,903 - ERROR - $VRYWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:09,540 - ERROR - $PRTYQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:10,723 - ERROR - $JENGQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:11,650 - ERROR - $CORLQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:12,280 - ERROR - $RCACW: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:13,995 - ERROR - $IBAAY: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:15,243 - ERROR - $GAQWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:16,770 - ERROR - $CRGEQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:19,369 - ERROR - $CRTWF: possibly delisted; no price data found  (period=5d)
+2026-01-16 21:58:20,015 - ERROR - $ORPHY: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:21,176 - ERROR - $PTRAQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:22,375 - ERROR - $VTRBY: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:23,964 - ERROR - $MKULQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:30,421 - ERROR - $INVLW: possibly delisted; no price data found  (period=5d)
+2026-01-16 21:58:31,043 - ERROR - $BCEL: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:31,676 - ERROR - $SQBGQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:32,440 - ERROR - $OCAXW: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:35,304 - ERROR - $AVHI: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:36,716 - ERROR - $PRETQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:37,463 - ERROR - $WBEVQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:38,154 - ERROR - $AXAS: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:40,547 - ERROR - $QNGYQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:41,164 - ERROR - $QTEKQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:43,235 - ERROR - $SIOX: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:45,529 - ERROR - $AVHIW: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:45,803 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: CLVRW"}}}
+2026-01-16 21:58:46,302 - ERROR - $CLVRW: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:48,440 - ERROR - $SRGAQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:49,767 - ERROR - $MMVXF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:50,504 - ERROR - $TWNFF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:51,575 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: DNMRQ"}}}
+2026-01-16 21:58:52,035 - ERROR - $DNMRQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:56,168 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: ENZB"}}}
+2026-01-16 21:58:56,783 - ERROR - $ENZB: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:58:59,895 - ERROR - $APPHQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:00,604 - ERROR - $TRTWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:02,556 - ERROR - $ZLSWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:05,574 - ERROR - $HCDPQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:06,558 - ERROR - $EVVAQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:08,247 - ERROR - $CORRQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:08,907 - ERROR - $SLMWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:10,069 - ERROR - $PKBO: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:11,706 - ERROR - $REVRQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:18,332 - ERROR - $ZMENY: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:19,307 - ERROR - $VHAQR: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:19,924 - ERROR - $ALPWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:20,773 - ERROR - $AACRF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:22,398 - ERROR - $ATIP: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:24,159 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: EGIOQ"}}}
+2026-01-16 21:59:24,559 - ERROR - $EGIOQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:25,273 - ERROR - $FTHWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:28,233 - ERROR - $CLOER: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:30,400 - ERROR - $FNVUF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:30,658 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: SYTTY"}}}
+2026-01-16 21:59:31,171 - ERROR - $SYTTY: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:32,569 - ERROR - $OGZPY: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:33,196 - ERROR - $ITCLY: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:34,164 - ERROR - $IVCWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:35,573 - ERROR - $ALJJ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:37,910 - ERROR - $IDBAY: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:38,507 - ERROR - $AMRSQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:40,032 - ERROR - $CWBR: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:41,339 - ERROR - $NFSWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:41,931 - ERROR - $CHRA: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:43,407 - ERROR - $OSAPQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:44,659 - ERROR - $LEGWQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:47,245 - ERROR - $KSPN: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:48,879 - ERROR - $SWMAY: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:49,448 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: SMTSF"}}}
+2026-01-16 21:59:49,967 - ERROR - $SMTSF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:50,843 - ERROR - $RADCQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:54,756 - ERROR - $AHPIQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:55,396 - ERROR - $FHSEY: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:57,326 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: PETWQ"}}}
+2026-01-16 21:59:57,735 - ERROR - $PETWQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 21:59:58,715 - ERROR - $MTCR: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:00,722 - ERROR - $HIPOW: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:01,273 - ERROR - $OSPWQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:02,136 - ERROR - $TRIRF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:05,689 - ERROR - $VTNRQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:06,355 - ERROR - $TCSGQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:07,830 - ERROR - $NVTAQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:08,096 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: VWESQ"}}}
+2026-01-16 22:00:08,664 - ERROR - $VWESQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:09,201 - ERROR - $CDAWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:11,285 - ERROR - $AGRX: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:11,877 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: ETWOW"}}}
+2026-01-16 22:00:12,442 - ERROR - $ETWOW: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:17,513 - ERROR - $PLMWF: possibly delisted; no price data found  (period=5d)
+2026-01-16 22:00:18,477 - ERROR - $GOLLQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:20,840 - ERROR - $TWLVW: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:22,497 - ERROR - $CYADY: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:23,540 - ERROR - $LCINQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:25,583 - ERROR - $NCNWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:25,987 - ERROR - $HOFV: possibly delisted; no price data found  (period=5d)
+2026-01-16 22:00:26,663 - ERROR - $CLRWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:27,233 - ERROR - $CXDC: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:28,721 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: HLGN"}}}
+2026-01-16 22:00:29,118 - ERROR - $HLGN: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:30,465 - ERROR - $PHASQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:30,733 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: RMGWF"}}}
+2026-01-16 22:00:31,403 - ERROR - $RMGWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:32,586 - ERROR - $ENGCQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:35,248 - ERROR - $TOGIW: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:37,239 - ERROR - $PTNRY: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:42,765 - ERROR - $CEAYY: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:46,658 - ERROR - $QTNTQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:47,876 - ERROR - $LYLTQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:48,792 - ERROR - $VWEWQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:50,100 - ERROR - $FXCOR: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:51,695 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: UNBX"}}}
+2026-01-16 22:00:52,076 - ERROR - $UNBX: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:53,375 - ERROR - $MOHOY: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:54,079 - ERROR - $BRSWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:55,073 - ERROR - $TGIDW: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:57,149 - ERROR - $BFIWQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:58,503 - ERROR - $SHPSQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:00:59,626 - ERROR - $IDICQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:01,438 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: NVACR"}}}
+2026-01-16 22:01:01,920 - ERROR - $NVACR: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:03,464 - ERROR - $LTRPA: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:06,244 - ERROR - $CDAKQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:07,609 - ERROR - $RVIC: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:08,706 - ERROR - $SKYA: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:19,329 - ERROR - $AGACF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:20,947 - ERROR - $ENDPQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:21,975 - ERROR - $WTMAR: possibly delisted; no price data found  (period=5d)
+2026-01-16 22:01:22,668 - ERROR - $TCDAQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:22,960 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: GOEWQ"}}}
+2026-01-16 22:01:23,144 - INFO - Alpaca API initialized successfully! Account Status: ACTIVE
+2026-01-16 22:01:23,523 - ERROR - $GOEWQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:26,228 - ERROR - $CRXTQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:27,325 - ERROR - $VYNT: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:29,655 - ERROR - $BLUAW: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:32,829 - ERROR - $ATNXQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:33,544 - ERROR - $CLVSQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:34,191 - ERROR - $IMPLQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:37,343 - ERROR - $AMPWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:38,711 - ERROR - $GMBLW: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:39,035 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: RMGCF"}}}
+2026-01-16 22:01:39,643 - ERROR - $RMGCF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:40,669 - ERROR - $ISLUF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:44,246 - ERROR - $IVCRQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:46,681 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: CSSNQ"}}}
+2026-01-16 22:01:47,121 - ERROR - $CSSNQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:47,369 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: CSLRF"}}}
+2026-01-16 22:01:47,987 - ERROR - $CSLRF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:48,684 - ERROR - $LHDXQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:49,377 - ERROR - $JRJCY: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:50,945 - ERROR - $FOACW: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:51,978 - ERROR - $KERNW: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:53,731 - ERROR - $PEARQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:55,139 - ERROR - $HAIWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:55,914 - ERROR - $LOVLQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:01:59,561 - ERROR - $HNPIY: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:02:00,218 - ERROR - $ONCR: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:02:00,867 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: KACWF"}}}
+2026-01-16 22:02:01,311 - ERROR - $KACWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:02:01,605 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BRZHR"}}}
+2026-01-16 22:02:02,029 - ERROR - $BRZHR: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:02:02,680 - ERROR - $NOVNQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:02:05,658 - ERROR - $CTSWF: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:02:07,347 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IRRXW"}}}
+2026-01-16 22:02:07,733 - ERROR - $IRRXW: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:02:13,262 - ERROR - $AVCTQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:02:14,434 - ERROR - $MIMOQ: possibly delisted; no price data found  (period=1d) (Yahoo error = "No data found, symbol may be delisted")
+2026-01-16 22:02:16,087 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: CLOE"}}}
