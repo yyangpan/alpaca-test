@@ -49,12 +49,12 @@ API_KEY = 'PKTQBTL5H2JAHP2AOGKYUNMXST'
 API_SECRET = 'GjwMgV9MUu34SNQAcYsf4s5ctipjfTQqUvuuWdzbn6G1'
 
 # Strategy Parameters
-MIN_PRICE = 0.3
-MAX_PRICE = 3.0  # Updated to $3.00
+MIN_PRICE = 0.1
+MAX_PRICE = 5.0
 DAILY_PURCHASE_AMOUNT = 100  # dollars
 BUY_DAYS = 5  # Buy for 5 consecutive days
 PERFORMANCE_DAYS = 3  # Check performance over last ~3 trading days
-MIN_PERFORMANCE_PCT = 10  # Minimum 10% gain over last ~3 days
+MIN_PERFORMANCE_PCT = 0  # No minimum performance requirement (removed)
 VOLUME_AVERAGE_DAYS = 30  # 30-day average for volume comparison
 VOLUME_MULTIPLIER = 2.0  # Volume must be ≥ 2× 30-day average
 PROFIT_TARGET_PCT = 50  # Sell when 50% profit
@@ -179,8 +179,8 @@ def check_volume_increase(symbol: str) -> bool:
 
 def check_performance_gain(symbol: str) -> Optional[float]:
     """
-    Check if stock has ≈15%+ gain over last ~3 trading days using Yahoo Finance.
-    Returns the performance percentage if criteria is met, None otherwise.
+    Get performance percentage (no requirement - just for tracking).
+    Performance requirement has been removed - returns any performance value.
     """
     if not YFINANCE_AVAILABLE:
         return None
@@ -190,16 +190,15 @@ def check_performance_gain(symbol: str) -> Optional[float]:
         # Get ~3+ trading days of data (use 5 days to ensure we have ~3 trading days)
         hist = ticker.history(period="5d")
         
-        if hist is None or len(hist) < PERFORMANCE_DAYS:
+        if hist is None or len(hist) < 2:
             return None  # Not enough data
         
         bars = hist
         
-        if len(bars) < PERFORMANCE_DAYS:
+        if len(bars) < 2:
             return None  # Not enough data
         
         # Get price from ~3 trading days ago and current price
-        # Get the earliest price from last 3 days range and latest price
         recent_bars = bars.tail(PERFORMANCE_DAYS + 2)
         
         if len(recent_bars) < 2:
@@ -214,14 +213,10 @@ def check_performance_gain(symbol: str) -> Optional[float]:
         if start_price <= 0:
             return None
         
-        # Calculate performance percentage
+        # Calculate performance percentage (no minimum threshold - returns any value)
         performance_pct = ((end_price - start_price) / start_price) * 100
         
-        # Check if performance meets minimum threshold
-        if performance_pct >= MIN_PERFORMANCE_PCT:
-            return performance_pct
-        
-        return None
+        return performance_pct  # Return any performance value (no filtering)
         
     except Exception:
         # Skip error messages during screening
@@ -335,10 +330,11 @@ def screen_stocks(symbols: List[str]) -> List[Dict]:
                 price_out_of_range_count += 1
                 continue
             
-            # Check performance gain (≥10% over last ~3 days)
+            # Get performance percentage (no requirement - just for tracking)
+            # Performance is optional and only used for display, not filtering
             performance_pct = check_performance_gain(symbol)
             if performance_pct is None:
-                continue  # Performance criteria not met
+                performance_pct = 0.0  # Default to 0 if can't calculate
             
             # Check volume increase (≥ 2× 30-day average)
             if not check_volume_increase(symbol):
@@ -406,14 +402,13 @@ def screen_stocks(symbols: List[str]) -> List[Dict]:
     logger.info(f"  No price/quote available: {no_price_count}")
     logger.info(f"  Price out of range (${MIN_PRICE}-${MAX_PRICE}): {price_out_of_range_count}")
     logger.info(f"  No volume increase (≥{VOLUME_MULTIPLIER}× 30-day avg): {no_volume_increase_count}")
-    logger.info(f"  Performance < {MIN_PERFORMANCE_PCT}%: (included in volume failures)")
     logger.info(f"  Qualified: {len(qualified_stocks)}")
     
     # Skip showing list of symbols without prices (reduce verbose output)
     
-    # Sort by peak score (AI entry signal confidence) first - catches pump phase early
-    # Then by volume ratio, then by performance
-    qualified_stocks.sort(key=lambda x: (x.get('peak_score', 0), x['volume_ratio'], x['performance_pct']), reverse=True)
+    # Sort by peak detection confidence only (peak_score) - primary ranking
+    # Peak score indicates entry timing quality (catching pump early)
+    qualified_stocks.sort(key=lambda x: x.get('peak_score', 0), reverse=True)
     
     return qualified_stocks[:MAX_STOCKS_PER_DAY]
 
