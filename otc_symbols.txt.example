@@ -1,0 +1,9 @@
+# OTC Symbols File
+# Add one OTC symbol per line
+# Lines starting with # are comments and will be ignored
+#
+# Example:
+# SYMBOL1
+# SYMBOL2
+# SYMBOL3
+
