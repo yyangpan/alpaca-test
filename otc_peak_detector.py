@@ -23,10 +23,12 @@ logger = logging.getLogger(__name__)
 
 class OTCPeakDetector:
     """
-    Detects peaks in OTC stocks using pattern recognition:
+    Enhanced peak detection with technical indicators:
     - Volume spike patterns
-    - Price momentum indicators
+    - Price momentum (RSI-like)
+    - Moving averages (SMA/EMA)
     - Volume-price divergence (peak signal)
+    - MACD-like momentum
     - Reversal signals
     """
     
@@ -34,7 +36,10 @@ class OTCPeakDetector:
                  volume_threshold_multiplier: float = 2.0,
                  price_momentum_days: int = 3,
                  peak_detection_window: int = 10,
-                 min_peak_prominence: float = 0.05):
+                 min_peak_prominence: float = 0.05,
+                 use_rsi: bool = True,
+                 use_macd: bool = True,
+                 use_ma: bool = True):
         """
         Initialize peak detector with parameters.
         
@@ -43,11 +48,17 @@ class OTCPeakDetector:
             price_momentum_days: Days to measure price momentum
             peak_detection_window: Window size for peak detection
             min_peak_prominence: Minimum peak prominence (5% of price range)
+            use_rsi: Use RSI-like momentum indicator
+            use_macd: Use MACD-like momentum indicator
+            use_ma: Use moving average crossovers
         """
         self.volume_threshold = volume_threshold_multiplier
         self.momentum_days = price_momentum_days
         self.peak_window = peak_detection_window
         self.min_prominence = min_peak_prominence
+        self.use_rsi = use_rsi
+        self.use_macd = use_macd
+        self.use_ma = use_ma
     
     def get_historical_data(self, symbol: str, period: str = "6mo") -> Optional[pd.DataFrame]:
         """
@@ -110,6 +121,82 @@ class OTCPeakDetector:
             'volume_ratio': volume_ratio,
             'spike_intensity': spike_intensity,
             'days_since_spike': max(0, days_since_spike)
+        }
+    
+    def calculate_rsi(self, prices: pd.Series, period: int = 14) -> float:
+        """
+        Calculate RSI-like indicator (Relative Strength Index).
+        Returns RSI value (0-100). >70 = overbought, <30 = oversold.
+        """
+        if len(prices) < period + 1:
+            return 50.0  # Neutral
+        
+        delta = prices.diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+        
+        if loss.iloc[-1] == 0:
+            return 100.0
+        
+        rs = gain.iloc[-1] / loss.iloc[-1]
+        rsi = 100 - (100 / (1 + rs))
+        
+        return rsi
+    
+    def calculate_macd(self, prices: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> Dict:
+        """
+        Calculate MACD-like indicator (Moving Average Convergence Divergence).
+        Returns dict with MACD line, signal line, and histogram.
+        """
+        if len(prices) < slow:
+            return {'macd': 0, 'signal': 0, 'histogram': 0, 'bullish': False}
+        
+        ema_fast = prices.ewm(span=fast, adjust=False).mean()
+        ema_slow = prices.ewm(span=slow, adjust=False).mean()
+        
+        macd_line = ema_fast - ema_slow
+        signal_line = macd_line.ewm(span=signal, adjust=False).mean()
+        histogram = macd_line - signal_line
+        
+        # Bullish = MACD above signal line
+        bullish = macd_line.iloc[-1] > signal_line.iloc[-1]
+        
+        return {
+            'macd': macd_line.iloc[-1],
+            'signal': signal_line.iloc[-1],
+            'histogram': histogram.iloc[-1],
+            'bullish': bullish
+        }
+    
+    def calculate_moving_averages(self, prices: pd.Series) -> Dict:
+        """
+        Calculate moving averages for trend detection.
+        Returns dict with SMA (20, 50) and EMA (12, 26).
+        """
+        if len(prices) < 50:
+            return {'sma20': None, 'sma50': None, 'ema12': None, 'ema26': None, 'golden_cross': False, 'death_cross': False}
+        
+        sma20 = prices.rolling(window=20).mean().iloc[-1]
+        sma50 = prices.rolling(window=50).mean().iloc[-1]
+        ema12 = prices.ewm(span=12, adjust=False).mean().iloc[-1]
+        ema26 = prices.ewm(span=26, adjust=False).mean().iloc[-1]
+        
+        current_price = prices.iloc[-1]
+        
+        # Golden cross = short MA crosses above long MA (bullish)
+        golden_cross = sma20 > sma50 if sma20 and sma50 else False
+        
+        # Death cross = short MA crosses below long MA (bearish)
+        death_cross = sma20 < sma50 if sma20 and sma50 else False
+        
+        return {
+            'sma20': sma20,
+            'sma50': sma50,
+            'ema12': ema12,
+            'ema26': ema26,
+            'golden_cross': golden_cross,
+            'death_cross': death_cross,
+            'price_above_sma20': current_price > sma20 if sma20 else False
         }
     
     def detect_price_momentum(self, hist: pd.DataFrame) -> Dict:
@@ -177,6 +264,29 @@ class OTCPeakDetector:
         
         volume_divergence = price_trend > 0.1 and volume_trend < -0.2  # Price up 10%, volume down 20%
         
+        # Signal 1b: RSI overbought (if enabled) - enhanced peak detection
+        rsi_overbought = False
+        if self.use_rsi and len(prices) >= 15:
+            try:
+                # Need full history for RSI, not just recent tail
+                price_col_full = 'Close' if 'Close' in hist.columns else 'close'
+                prices_full = hist[price_col_full]
+                rsi = self.calculate_rsi(prices_full, period=14)
+                rsi_overbought = rsi > 70  # Overbought = potential peak
+            except Exception:
+                pass
+        
+        # Signal 1c: MACD bearish divergence (if enabled) - enhanced peak detection
+        macd_bearish = False
+        if self.use_macd and len(hist) >= 26:
+            try:
+                price_col_full = 'Close' if 'Close' in hist.columns else 'close'
+                prices_full = hist[price_col_full]
+                macd_data = self.calculate_macd(prices_full)
+                macd_bearish = not macd_data.get('bullish', True)  # MACD turning bearish
+            except Exception:
+                pass
+        
         # Signal 2: Recent peak detection using scipy
         try:
             price_values = prices.values
@@ -202,9 +312,21 @@ class OTCPeakDetector:
         
         dump_signal = volume_decline and price_dropping
         
-        # Calculate peak confidence (0-1)
-        peak_signals = sum([volume_divergence, is_near_peak, dump_signal])
-        peak_confidence = peak_signals / 3.0
+        # Calculate peak confidence (0-1) - enhanced with technical indicators
+        peak_signals_list = [volume_divergence, is_near_peak, dump_signal]
+        
+        # Add RSI and MACD signals if enabled
+        if rsi_overbought:
+            peak_signals_list.append(True)
+        if macd_bearish:
+            peak_signals_list.append(True)
+        
+        # Weighted confidence calculation
+        signal_count = len([s for s in peak_signals_list if s])
+        total_possible = max(3, len(peak_signals_list))  # At least 3 base signals
+        
+        # Higher confidence when multiple signals align
+        peak_confidence = signal_count / total_possible
         
         # Calculate reversal risk (higher when multiple signals align)
         reversal_risk = peak_confidence
@@ -245,19 +367,44 @@ class OTCPeakDetector:
         # Check if already at peak
         peak_analysis = self.detect_peak_signals(hist)
         
-        # Entry criteria
+        # Entry criteria (enhanced with technical indicators)
         has_volume_spike = volume_analysis['has_spike']
         days_since_spike = volume_analysis['days_since_spike']
-        positive_momentum = momentum_analysis['momentum'] > 5
+        positive_momentum = momentum_analysis['momentum'] > 5 or momentum_analysis['trend'] == 'up'
         not_at_peak = not peak_analysis['is_at_peak']
         
-        # Entry signal logic
-        if has_volume_spike and days_since_spike <= 3 and positive_momentum and not_at_peak:
-            confidence = min(0.9, 
-                           volume_analysis['volume_ratio'] / 5.0 +  # Higher volume = higher confidence
-                           momentum_analysis['momentum'] / 50.0)    # Higher momentum = higher confidence
+        # Additional technical indicator signals
+        rsi_ok = momentum_analysis.get('rsi') is None or (30 < momentum_analysis['rsi'] < 70)  # Not overbought/oversold
+        macd_bullish = momentum_analysis.get('macd') is None or momentum_analysis['macd'].get('bullish', False)
+        ma_bullish = momentum_analysis.get('moving_averages') is None or momentum_analysis['moving_averages'].get('golden_cross', False) or momentum_analysis['moving_averages'].get('price_above_sma20', False)
+        
+        # Calculate confidence using multiple factors
+        confidence_factors = []
+        
+        if has_volume_spike:
+            confidence_factors.append(min(0.4, volume_analysis['volume_ratio'] / 10.0))  # Volume contribution
+        
+        if positive_momentum:
+            confidence_factors.append(min(0.3, abs(momentum_analysis['momentum']) / 100.0))  # Momentum contribution
+        
+        if rsi_ok:
+            confidence_factors.append(0.1)  # RSI contribution
+        
+        if macd_bullish:
+            confidence_factors.append(0.1)  # MACD contribution
+        
+        if ma_bullish:
+            confidence_factors.append(0.1)  # MA contribution
+        
+        # Entry signal logic (enhanced criteria)
+        if has_volume_spike and days_since_spike <= 3 and positive_momentum and not_at_peak and (rsi_ok or not self.use_rsi):
+            confidence = min(0.95, sum(confidence_factors))
             signal = 'BUY'
-            reason = f"Volume spike ({volume_analysis['volume_ratio']:.1f}× avg), momentum {momentum_analysis['momentum']:.1f}%, not at peak"
+            reason = f"Volume spike ({volume_analysis['volume_ratio']:.1f}× avg), momentum {momentum_analysis['momentum']:.1f}%, trend {momentum_analysis['trend']}"
+            if momentum_analysis.get('rsi'):
+                reason += f", RSI {momentum_analysis['rsi']:.0f}"
+            if macd_bullish:
+                reason += ", MACD bullish"
         elif has_volume_spike and days_since_spike <= 5 and positive_momentum:
             confidence = 0.6
             signal = 'WATCH'
